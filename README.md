@@ -1,5 +1,8 @@
 # `k8s-rdf-exporter` as a HTTP server
 
+This is a simple HTTP server that exports Kubernetes resources in RDF format.
+It is using the [Kubernetes RDF Exporter](https://github.com/zazuko/k8s-rdf-exporter) tool to convert Kubernetes resources to RDF.
+
 ## Deploy it on Kubernetes
 
 This will deploy it in the `default` namespace in your current Kubernetes cluster (current context).
