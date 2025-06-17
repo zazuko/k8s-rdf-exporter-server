@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-rdf-exporter
+spec:
+  template:
+    spec:
+      # This ServiceAccount should have the necessary permissions to access the Kubernetes API to read the resources
+      serviceAccountName: k8s-rdf-exporter
+
+      containers:
+        - name: k8s-rdf-exporter
+          image: ghcr.io/zazuko/k8s-rdf-exporter-server:latest # Replace 'latest' with the specific version tag
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: NAMESPACES
+              value: "default,kube-system" # Adjust as necessary for your use case, or remove it to target all namespaces
+
+          livenessProbe:
+            httpGet:
+              port: http
+              path: /healthz
+          readinessProbe:
+            httpGet:
+              port: http
+              path: /healthz
+
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "150m"
+            limits:
+              memory: "128Mi"
+              cpu: "150m"
