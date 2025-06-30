@@ -40,9 +40,17 @@ app.get("/healthz", async (_request, reply) => {
 
 // Get Kubernetes state as RDF
 app.get("/", async (_request, reply) => {
-  const dataset = await buildDataset(config);
-  const ttl = turtle`${dataset}`.toString();
-  return reply.status(200).header("content-type", "text/turtle").send(ttl);
+  try {
+    const dataset = await buildDataset(config);
+    const ttl = turtle`${dataset}`.toString();
+    return reply.status(200).header("content-type", "text/turtle").send(ttl);
+  } catch (error) {
+    app.log.error(error);
+    return reply.status(500).send({
+      status: "error",
+      message: "Unable to retrieve Kubernetes state. Please check the logs for more details.",
+    });
+  }
 });
 
 app.listen({ port, host }, (err, address) => {
