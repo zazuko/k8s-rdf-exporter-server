@@ -11,7 +11,7 @@ spec:
       containers:
         - name: k8s-rdf-exporter
           image: ghcr.io/zazuko/k8s-rdf-exporter-server:latest # Replace 'latest' with the specific version tag
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always # Use 'IfNotPresent' if you want to avoid pulling the image every time (recommended if using specific version tags)
           ports:
             - name: http
               containerPort: 3000
