@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: default
+
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/name: k8s-rdf-exporter
+
+resources:
+  - ../../base/ # This includes the base resources
+  - rbac.yaml
+
+patches:
+  - target:
+      kind: Deployment
+      name: k8s-rdf-exporter
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: NAMESPACES
+          value: "default" # Adjust as necessary for your use case (multiple values could be specified by using ',' as separator), or remove it to target all namespaces
+
+# ^ This patch adds the NAMESPACES environment variable to the deployment, make sure to adjust it as necessary

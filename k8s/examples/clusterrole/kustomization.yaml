@@ -9,6 +9,5 @@ labels:
       app.kubernetes.io/name: k8s-rdf-exporter
 
 resources:
+  - ../../base/ # This includes the base resources
   - rbac.yaml
-  - deployment.yaml
-  - service.yaml
