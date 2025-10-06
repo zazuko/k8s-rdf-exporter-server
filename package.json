@@ -26,6 +26,6 @@
     "@stylistic/eslint-plugin": "^5.3.1",
     "eslint": "^9.36.0",
     "globals": "^16.4.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   }
 }
