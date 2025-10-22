@@ -1,5 +1,11 @@
 # @zazuko/k8s-rdf-exporter-server
 
+## 0.0.2
+
+### Patch Changes
+
+- 7ab33a9: Upgrade k8s-rdf-exporter to 0.4.0
+
 ## 0.0.1
 
 ### Patch Changes
