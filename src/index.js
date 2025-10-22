@@ -22,6 +22,7 @@ const config = {
   baseIri: process.env.BASE_IRI || defaultBaseIri,
   baseIriOci: process.env.BASE_IRI_OCI || defaultBaseIriOci,
   namespaces: process.env.NAMESPACES ? process.env.NAMESPACES.split(",").map((ns) => ns.trim()) : undefined,
+  generateNamespaces: process.env.GENERATE_NAMESPACES === "true",
 
   skipTLSVerify: process.env.SKIP_TLS_VERIFY === "true",
   namespace: process.env.NAMESPACE,
