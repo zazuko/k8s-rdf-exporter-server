@@ -34,6 +34,16 @@ spec:
               drop:
                 - ALL
 
+          # Gives the application time to start before the liveness probe can kill it: the other
+          # probes are disabled until this one succeeds, and it allows up to 60s of startup time
+          # while still marking the pod ready as soon as it answers.
+          startupProbe:
+            httpGet:
+              port: http
+              path: /healthz
+            periodSeconds: 2
+            failureThreshold: 30
+
           livenessProbe:
             httpGet:
               port: http

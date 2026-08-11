@@ -1,0 +1,155 @@
+# Workloads exported by the end-to-end tests.
+#
+# Every workload declares `replicas: 0`: the exporter reads the Kubernetes objects themselves and
+# never looks at the running pods, so the tests do not need to schedule anything or pull any image.
+# That keeps the fixtures instantaneous and independent from any registry.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: e2e-alpha
+  labels:
+    e2e.zazuko.com/suite: rdf-exporter
+  annotations:
+    e2e.zazuko.com/description: Namespace used by the end-to-end tests
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: e2e-beta
+  labels:
+    e2e.zazuko.com/suite: rdf-exporter
+---
+# A deployment with two containers, labels and annotations: covers the resource itself, its
+# metadata nodes, and the fact that several images end up linked to a single deployment.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alpha-api
+  namespace: e2e-alpha
+  labels:
+    app.kubernetes.io/name: alpha-api
+    e2e.zazuko.com/tier: backend
+  annotations:
+    e2e.zazuko.com/owner: platform-team
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alpha-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alpha-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/zazuko/alpha-api:1.4.2
+        - name: sidecar
+          image: docker.io/library/busybox:1.36
+---
+# A deployment whose image has neither a registry nor a tag, which the exporter has to normalise
+# into docker.io/library/nginx:latest.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alpha-web
+  namespace: e2e-alpha
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alpha-web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alpha-web
+    spec:
+      containers:
+        - name: web
+          image: nginx
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: alpha-db
+  namespace: e2e-alpha
+  labels:
+    e2e.zazuko.com/tier: database
+  annotations:
+    e2e.zazuko.com/backup: nightly
+spec:
+  replicas: 0
+  serviceName: alpha-db
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alpha-db
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alpha-db
+    spec:
+      containers:
+        - name: db
+          image: postgres:17.2-alpine
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alpha-ingress
+  namespace: e2e-alpha
+spec:
+  rules:
+    - host: alpha.e2e.example.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: alpha-api
+                port:
+                  number: 80
+    - host: www.alpha.e2e.example.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: alpha-api
+                port:
+                  number: 80
+---
+# An ingress without any host: the exporter must still export the ingress itself.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alpha-hostless
+  namespace: e2e-alpha
+spec:
+  defaultBackend:
+    service:
+      name: alpha-api
+      port:
+        number: 80
+---
+# Lives in the other namespace, so that the tests can prove NAMESPACES really filters.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: beta-worker
+  namespace: e2e-beta
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: beta-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: beta-worker
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/zazuko/beta-worker:2.0.0

@@ -1,0 +1,66 @@
+# Service accounts used by the end-to-end tests to run the exporter with different permissions.
+#
+# They all live in the "default" namespace, and are only ever used to mint tokens: the exporter
+# itself runs outside of the cluster for these scenarios.
+---
+# Can read everything, everywhere: the happy path.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: e2e-viewer
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: e2e-viewer
+subjects:
+  - kind: ServiceAccount
+    name: e2e-viewer
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+# Has no permission at all: used to check how the server reports an authorisation failure.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: e2e-powerless
+  namespace: default
+---
+# Can read the workloads of the "e2e-alpha" namespace, but is not allowed to read the namespace
+# object itself. This is the situation GENERATE_NAMESPACES exists for.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: e2e-workloads-only
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: e2e-workloads-only
+  namespace: e2e-alpha
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["get", "list"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: e2e-workloads-only
+  namespace: e2e-alpha
+subjects:
+  - kind: ServiceAccount
+    name: e2e-workloads-only
+    namespace: default
+roleRef:
+  kind: Role
+  name: e2e-workloads-only
+  apiGroup: rbac.authorization.k8s.io
