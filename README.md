@@ -9,7 +9,7 @@ This will deploy it in the `default` namespace in your current Kubernetes cluste
 
 ```sh
 # Deploy the k8s-rdf-exporter in the "default" namespace (this would use the ClusterRole example)
-kubectl kustomize k8s/examples/clustrrole | kubectl apply -f -
+kubectl kustomize k8s/examples/clusterrole | kubectl apply -f -
 # or, if you want to use the Role example:
 # kubectl kustomize k8s/examples/role | kubectl apply -f -
 
@@ -27,3 +27,13 @@ http://localhost:3000/
 
 To deploy it in a different namespace, you can change the `namespace` field in the `kustomization.yaml` file for your desired example.
 Get more information depending on the example you are using in the [`k8s/examples/`](./k8s/examples/) directory.
+
+## Tests
+
+```sh
+npm test           # lint + unit tests, no cluster needed
+npm run test:e2e   # end-to-end tests, against a real Kubernetes cluster
+```
+
+The end-to-end tests deploy this server on a k3s cluster, both from the [`k8s/examples/`](./k8s/examples/) manifests and as a plain process talking to the Kubernetes API, and check the RDF it exports.
+See [`test/README.md`](./test/README.md) for what they cover and how to run them locally.

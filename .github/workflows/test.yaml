@@ -1,0 +1,102 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      k3s-channel:
+        description: k3s release channel to test against (stable, latest, or a version line such as v1.33)
+        required: false
+        default: stable
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Lint and unit tests
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "lts/*"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+  e2e:
+    name: End-to-end tests on k3s
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+      IMAGE: k8s-rdf-exporter-server:e2e
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "lts/*"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start a k3s cluster
+        env:
+          # Neither the ingress controller nor the metrics server is needed: the exporter reads
+          # Kubernetes objects, it never talks to the workloads themselves.
+          INSTALL_K3S_EXEC: --disable=traefik --disable=metrics-server --write-kubeconfig-mode=644
+          INSTALL_K3S_CHANNEL: ${{ inputs.k3s-channel || 'stable' }}
+        run: |
+          curl -sfL https://get.k3s.io | sh -s -
+
+          # The API server answers before the node has registered itself, and `kubectl wait` fails
+          # on an empty selection, so wait for the node to show up first.
+          timeout 180 bash -c 'until kubectl get nodes --output name 2>/dev/null | grep -q .; do sleep 2; done'
+          kubectl wait --for=condition=Ready nodes --all --timeout=180s
+          kubectl version
+
+      - name: Build the image
+        run: docker build --tag "${IMAGE}" .
+
+      - name: Side-load the image into k3s
+        run: docker save "${IMAGE}" | sudo k3s ctr images import -
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      - name: Collect the state of the cluster
+        if: failure()
+        run: |
+          kubectl get pods --all-namespaces --output wide
+          kubectl --namespace default describe deployment k8s-rdf-exporter || true
+          kubectl --namespace default logs deployment/k8s-rdf-exporter --all-containers --tail=200 || true
+          kubectl get events --all-namespaces --sort-by=.lastTimestamp | tail -50

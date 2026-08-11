@@ -4,9 +4,9 @@ RUN apk add --no-cache tini
 
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies, without the ones only needed to lint and test
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm ci --omit=dev
 
 # Copy the rest of the application code
 COPY . .

@@ -1,0 +1,21 @@
+# The ClusterRole example, with the published image swapped for the one built from this checkout.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../../../k8s/examples/clusterrole
+
+images:
+  - name: ghcr.io/zazuko/k8s-rdf-exporter-server
+    newName: k8s-rdf-exporter-server
+    newTag: e2e
+
+patches:
+  # The image is side-loaded into the node, there is nothing to pull it from.
+  - target:
+      kind: Deployment
+      name: k8s-rdf-exporter
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Never
