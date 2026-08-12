@@ -1,5 +1,11 @@
 # @zazuko/k8s-rdf-exporter-server
 
+## 0.0.4
+
+### Patch Changes
+
+- 80920e7: Upgrade dependencies, most notably `@zazuko/k8s-rdf-exporter` to 0.4.1.
+
 ## 0.0.3
 
 ### Patch Changes
